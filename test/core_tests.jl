@@ -262,6 +262,26 @@ using Test
             end
         end
 
+        @testset "nlargest and nsmallest: type stability" begin
+            arrs = let a = [9, 8], b = BitVector([true, false])
+                Any[a, b, (@view a[1:2]), (@view b[1:2]), 1:3]
+            end
+            for nex in (nlargest, nsmallest)
+                for a in arrs
+                    @test (@inferred nex(1, a)) isa AbstractVector{eltype(a)}
+                end
+            end
+        end
+
+        @testset "nlargest and nsmallest: immutable input" begin
+            r = 1:5
+            for n in -1:7
+                k = clamp(n, 0, 5)
+                @test nsmallest(n, r) == collect(r)[1:k]
+                @test nlargest(n, r) == reverse(r)[1:k]
+            end
+        end
+
         @testset "push! type conversion" begin # issue 399
             h = BinaryMinHeap{Float64}()
             push!(h, 3.0)
